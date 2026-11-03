@@ -1,0 +1,7 @@
+{
+  "name": "@durable-flow/examples",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "src/index.ts",
+  "dependencies": { "@durable-flow/engine": "*" }
+}

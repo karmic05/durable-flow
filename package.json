@@ -1,0 +1,24 @@
+{
+  "name": "durable-flow",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*", "apps/*", "examples"],
+  "scripts": {
+    "dev": "tsx scripts/dev.ts",
+    "test": "vitest run",
+    "chaos": "tsx scripts/chaos.ts",
+    "bench": "tsx scripts/bench.ts",
+    "build:web": "npm -w apps/web run build"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.0"
+  },
+  "dependencies": {
+    "pg": "^8.13.0",
+    "embedded-postgres": "^17.2.0-beta.15"
+  }
+}
