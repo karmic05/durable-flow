@@ -3,15 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>durable-flow: workflows that survive crashes</title>
-<meta name="description" content="A durable execution engine in TypeScript and Postgres. Kill a worker mid-workflow and watch another resume from the event history.">
-<meta name="color-scheme" content="light dark">
-<meta name="theme-color" content="#fafaf9" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0b0b0a" media="(prefers-color-scheme: dark)">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23111'/%3E%3Cpath d='M9 22V10m0 0 7 6-7 6m14-12v12' stroke='%23fff' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<title>durable-flow: kill the worker, keep the workflow</title>
+<meta name="description" content="A durable execution engine in TypeScript and Postgres. Kill a worker mid-workflow and watch another resume from the event history with no duplicate side effects.">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#f5efe3">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232b3cff'/%3E%3Cpath d='M9 22V10m0 0 7 6-7 6m14-12v12' stroke='%23fff' stroke-width='2.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script>document.documentElement.classList.add('js')</script>
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -20,13 +19,14 @@
 <header class="nav">
   <div class="wrap nav-inner">
     <a class="brand" href="#top" aria-label="durable-flow">
-      <svg viewBox="0 0 32 32" width="20" height="20" aria-hidden="true"><path d="M9 22V10m0 0 7 6-7 6m14-12v12" stroke="currentColor" stroke-width="2.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="logo" aria-hidden="true"><svg viewBox="0 0 32 32" width="18" height="18"><path d="M9 22V10m0 0 7 6-7 6m14-12v12" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
       durable-flow
     </a>
     <nav class="nav-links" aria-label="Sections">
       <a href="#how">How it works</a>
+      <a href="#does">Features</a>
       <a href="#fine-print">Fine print</a>
-      <a class="btn btn-ghost" href="https://github.com/karmic05/durable-flow" rel="noopener">GitHub <span aria-hidden="true">↗</span></a>
+      <a class="btn btn-sm" href="https://github.com/karmic05/durable-flow" rel="noopener">GitHub ↗</a>
     </nav>
   </div>
 </header>
@@ -34,14 +34,19 @@
 <main id="top">
 
 <section class="hero wrap">
-  <h1 class="rise" style="--i:0">Workflows that survive<br class="br-lg"> the crash.</h1>
-  <p class="lede rise" style="--i:1">
-    A durable execution engine in TypeScript and Postgres. Write multi-step processes as plain async functions.
-    Kill the worker mid-flight; another resumes from the event history with no duplicate side effects.
+  <p class="eyebrow rise" style="--i:0"><span class="live"></span>Durable execution · TypeScript + Postgres</p>
+  <h1 class="rise" style="--i:1">Kill the worker.<br><mark>Keep the workflow.</mark></h1>
+  <p class="lede rise" style="--i:2">
+    Write a multi-step process as a plain async function. When the machine running it dies halfway,
+    another worker replays the event history and carries on, <b>without charging the card twice</b>.
   </p>
+  <div class="cta rise" style="--i:3">
+    <a class="btn btn-primary" href="#demo">Break it yourself <span aria-hidden="true">↓</span></a>
+    <a class="btn" href="https://github.com/karmic05/durable-flow" rel="noopener">View the source ↗</a>
+  </div>
 
   <!-- ───────────── interactive demo ───────────── -->
-  <div class="demo rise" style="--i:2" id="demo" data-run="idle" aria-label="Interactive crash and resume demo">
+  <div class="demo rise" style="--i:4" id="demo" data-run="idle" aria-label="Interactive crash and resume demo">
     <div class="demo-top">
       <div class="demo-title"><span class="dot" aria-hidden="true"></span><code>orderSaga</code><span class="muted">ORD-7K2Q</span></div>
       <div class="demo-controls">
@@ -98,13 +103,15 @@
   </div>
 </section>
 
-<section class="how wrap" id="how">
-  <div class="sec-head reveal">
-    <h2>Your code is the workflow.<br><span class="dim">The history is the truth.</span></h2>
-  </div>
+<!-- The page is itself an event history: each section is an event on the rail. -->
+<div class="timeline wrap">
 
-  <div class="how-grid">
-    <div class="code reveal" aria-label="Example workflow">
+  <section class="ev" id="how">
+    <div class="ev-rail"><div class="ev-rail-in"><i class="node"></i><span class="seq">02</span><span class="evt">How it works</span></div></div>
+    <div class="ev-body">
+      <h2 class="reveal">Your code is the workflow.<br><span class="soft">The history is the truth.</span></h2>
+      <div class="how-grid">
+        <div class="code reveal" aria-label="Example workflow">
 <pre><code><span class="k">async function</span> <span class="f">orderSaga</span>(ctx, order) {
   <span class="k">const</span> saga = ctx.<span class="c">saga</span>()
   <span class="k">try</span> {
@@ -122,61 +129,65 @@
     <span class="k">throw</span> err
   }
 }</code></pre>
+        </div>
+        <ol class="how-steps">
+          <li class="reveal" style="--i:0"><span class="num">1</span><div><h3>Record</h3><p>Every <code>ctx.*</code> call becomes an event in Postgres: scheduled, started, completed, failed, timer fired. No serialized stack to corrupt.</p></div></li>
+          <li class="reveal" style="--i:1"><span class="num">2</span><div><h3>Replay</h3><p>A worker re-runs your function from the top. Calls already in history return their recorded results instantly. The first call without one is where real work resumes.</p></div></li>
+          <li class="reveal" style="--i:2"><span class="num">3</span><div><h3>Resume</h3><p>Workers hold a lease they must keep renewing. If one dies, the lease expires, another claims the workflow at a higher epoch, and the dead worker's late writes are rejected.</p></div></li>
+        </ol>
+      </div>
     </div>
+  </section>
 
-    <ol class="how-steps">
-      <li class="reveal" style="--i:0"><span class="num">1</span><div><h3>Record</h3><p>Every <code>ctx.*</code> call becomes an event in Postgres: scheduled, started, completed, failed, timer fired. No serialized stack to corrupt.</p></div></li>
-      <li class="reveal" style="--i:1"><span class="num">2</span><div><h3>Replay</h3><p>A worker re-runs your function from the top. Calls already in history return their recorded results instantly. The first call without one is where real work resumes.</p></div></li>
-      <li class="reveal" style="--i:2"><span class="num">3</span><div><h3>Resume</h3><p>Workers hold a lease they must keep renewing. If one dies, the lease expires, another claims the workflow at a higher epoch, and the dead worker's late writes are rejected.</p></div></li>
-    </ol>
-  </div>
-</section>
+  <section class="ev" id="does">
+    <div class="ev-rail"><div class="ev-rail-in"><i class="node"></i><span class="seq">03</span><span class="evt">What it does</span></div></div>
+    <div class="ev-body">
+      <h2 class="reveal">Everything a workflow needs<br><span class="soft">to outlive its process.</span></h2>
+      <ul class="tiles">
+        <li class="tile reveal" style="--i:0"><span class="tag">replay</span><h3>Deterministic replay</h3><p>Divergence is detected and parked as a stuck workflow, never silently corrupted.</p></li>
+        <li class="tile reveal" style="--i:1"><span class="tag">crash</span><h3>Crash recovery</h3><p>Leases, heartbeats, epoch fencing. Workers are real OS processes; the kill is a genuine <code>SIGKILL</code>.</p></li>
+        <li class="tile reveal" style="--i:2"><span class="tag">time</span><h3>Durable timers</h3><p><code>ctx.sleep</code> holds no worker while it waits. Any worker wakes it when it's due.</p></li>
+        <li class="tile reveal" style="--i:3"><span class="tag">retry</span><h3>Retries</h3><p>Attempts, backoff, jitter and non-retryable errors per activity. Every attempt is an event.</p></li>
+        <li class="tile reveal" style="--i:4"><span class="tag">saga</span><h3>Compensation</h3><p>Undo steps run in reverse as recorded, retried, idempotent activities.</p></li>
+        <li class="tile reveal" style="--i:5"><span class="tag">flow</span><h3>Signals and children</h3><p>Park on a human approval, fan out child workflows, query live state.</p></li>
+        <li class="tile reveal" style="--i:6"><span class="tag">ship</span><h3>Safe code changes</h3><p><code>ctx.patched()</code> versions in-flight runs. A fuzzer finds hidden clock and RNG use.</p></li>
+        <li class="tile reveal" style="--i:7"><span class="tag">see</span><h3>Observable</h3><p>History timeline, state inspector with a replay debugger, OpenTelemetry traces across workers.</p></li>
+        <li class="tile reveal" style="--i:8"><span class="tag">scale</span><h3>Bounded history</h3><p><code>continueAsNew</code> hands state to a fresh run so long loops never replay forever.</p></li>
+      </ul>
+    </div>
+  </section>
 
-<section class="feat wrap" id="does">
-  <div class="sec-head reveal"><h2>What it does</h2></div>
-  <dl class="rows">
-    <div class="row reveal"><dt>Deterministic replay</dt><dd>Re-execution from history. Divergence is detected and parked as a stuck workflow, never silently corrupted.</dd></div>
-    <div class="row reveal"><dt>Crash recovery</dt><dd>Leases, heartbeats and epoch fencing. Workers are real OS processes, so the kill is a genuine <code>SIGKILL</code>.</dd></div>
-    <div class="row reveal"><dt>Durable timers</dt><dd><code>ctx.sleep</code> holds no worker while it waits. Any worker wakes the workflow when it's due.</dd></div>
-    <div class="row reveal"><dt>Retries</dt><dd>Attempts, exponential backoff, jitter and non-retryable errors per activity. Every attempt is an event.</dd></div>
-    <div class="row reveal"><dt>Sagas</dt><dd>Compensations run in reverse as recorded, retried, idempotent activities.</dd></div>
-    <div class="row reveal"><dt>Signals, children, queries</dt><dd>Park on a human approval, fan out child workflows, read live state.</dd></div>
-    <div class="row reveal"><dt>Safe code changes</dt><dd><code>ctx.patched()</code> versions in-flight workflows. A fuzzer finds hidden clock and RNG use before you deploy.</dd></div>
-    <div class="row reveal"><dt>Observable</dt><dd>History timeline, per-workflow state inspector with a time-travel replay debugger, OpenTelemetry traces across workers.</dd></div>
-    <div class="row reveal"><dt>Bounded history</dt><dd><code>continueAsNew</code> hands state to a fresh execution so long loops never replay forever.</dd></div>
-  </dl>
-</section>
+  <section class="ev" id="fine-print">
+    <div class="ev-rail"><div class="ev-rail-in"><i class="node"></i><span class="seq">04</span><span class="evt">Fine print</span></div></div>
+    <div class="ev-body">
+      <h2 class="reveal">Not magic.<br><span class="soft">Here's what it isn't.</span></h2>
+      <div class="limits">
+        <article class="limit reveal" style="--i:0"><s>Exactly-once execution</s><h3>At-least-once, plus idempotency</h3><p>If a worker dies after the side effect but before the result is recorded, the activity runs again. You get exactly-once <i>effects</i> only if the service you call honours the key. Flip the switch in the demo to see the alternative.</p></article>
+        <article class="limit reveal" style="--i:1"><s>Makes your code deterministic</s><h3>You keep that promise</h3><p>Workflow functions must not read the clock, call <code>Math.random()</code> or touch the network. Use <code>ctx.now()</code>, <code>ctx.random()</code> and activities. The fuzzer finds mistakes; it can't prove there are none.</p></article>
+        <article class="limit reveal" style="--i:2"><s>A Temporal replacement</s><h3>A working implementation of the idea</h3><p>One Postgres, polling workers, TypeScript only. No sharding, multi-region, multi-tenancy or auth, and none of the production hardening.</p></article>
+        <article class="limit reveal" style="--i:3"><s>Low-latency</s><h3>Built for seconds to days</h3><p>Each step is a database round-trip plus a replay. Great for business processes, wrong for request handlers.</p></article>
+        <article class="limit reveal" style="--i:4"><s>Free replay</s><h3>Linear in history length</h3><p>Long-lived workflows need <code>continueAsNew</code> to reset the history.</p></article>
+        <article class="limit reveal" style="--i:5"><s>Fire-and-forget</s><h3>Await everything that matters</h3><p>An activity you start but never <code>await</code> is dropped when the workflow ends.</p></article>
+      </div>
 
-<section class="fine wrap" id="fine-print">
-  <div class="sec-head reveal">
-    <h2>The fine print</h2>
-    <p>Durable-execution marketing oversells. Here is what this isn't.</p>
-  </div>
-  <div class="limits">
-    <article class="limit reveal"><h3>Not exactly-once execution</h3><p>Activities run <b>at least once</b>. If a worker dies after the side effect but before the result is recorded, the activity runs again. You get exactly-once <i>effects</i> only if the service you call honours the idempotency key. Flip the switch in the demo to see the alternative.</p></article>
-    <article class="limit reveal"><h3>Doesn't make your code deterministic</h3><p>Workflow functions must not read the clock, call <code>Math.random()</code> or touch the network. Use <code>ctx.now()</code>, <code>ctx.random()</code> and activities. The fuzzer finds mistakes; it can't prove there are none.</p></article>
-    <article class="limit reveal"><h3>Not a Temporal replacement</h3><p>One Postgres, polling workers, TypeScript only. No sharding, multi-region, multi-tenancy or auth, and none of the production hardening. It's a working implementation of the idea, built to learn from.</p></article>
-    <article class="limit reveal"><h3>Not for latency-critical paths</h3><p>Each step is a database round-trip plus a replay. Think seconds-to-days business processes, not request handlers.</p></article>
-    <article class="limit reveal"><h3>Replay cost grows with history</h3><p>Replay is linear in event count. Long-lived workflows need <code>continueAsNew</code> to reset it.</p></article>
-    <article class="limit reveal"><h3>No fire-and-forget</h3><p>An activity you start but never <code>await</code> is dropped when the workflow ends. Await everything that matters.</p></article>
-  </div>
+      <div class="contract reveal">
+        <h3>The contract</h3>
+        <ol>
+          <li><span><b>Workflows are deterministic.</b> Same history in, same commands out.</span></li>
+          <li><span><b>Activities are idempotent.</b> Use the key; assume you'll be called twice.</span></li>
+          <li><span><b>The history is the truth.</b> If it isn't an event, it didn't happen.</span></li>
+        </ol>
+      </div>
+    </div>
+  </section>
 
-  <div class="contract reveal">
-    <h3>The contract</h3>
-    <ol>
-      <li><span><b>Workflows are deterministic.</b> Same history in, same commands out.</span></li>
-      <li><span><b>Activities are idempotent.</b> Use the key; assume you'll be called twice.</span></li>
-      <li><span><b>The history is the truth.</b> If it isn't an event, it didn't happen.</span></li>
-    </ol>
-  </div>
-</section>
-
+</div>
 </main>
 
 <footer class="footer">
   <div class="wrap footer-inner">
-    <span>durable-flow · TypeScript, Postgres, React</span>
-    <span class="footer-note">Live demo: deploying soon · <a href="https://github.com/karmic05/durable-flow" rel="noopener">Source ↗</a></span>
+    <span><b>durable-flow</b> · TypeScript, Postgres, React</span>
+    <span>Live demo: deploying soon · <a href="https://github.com/karmic05/durable-flow" rel="noopener">Source ↗</a></span>
   </div>
 </footer>
 
