@@ -30,7 +30,7 @@
   const KILLED = Symbol('killed');
   const ABORT = Symbol('abort');
 
-  const runBtn = $('#run'), killBtn = $('#kill'), idem = $('#idem');
+  const runBtn = $('#run'), manualBtn = $('#runManual'), killBtn = $('#kill'), idem = $('#idem');
   const logEl = $('#log'), verdict = $('#verdict'), dedupedEl = $('#deduped');
   const A = $('#wA'), B = $('#wB');
   const rows = Object.fromEntries($$('#steps li').map((li) => [li.dataset.step, li]));
@@ -86,7 +86,7 @@
   };
   const say = (html, tone) => { verdict.innerHTML = `<span>${html}</span>`; verdict.dataset.tone = tone; };
   const syncButtons = () => {
-    runBtn.disabled = S.running;
+    runBtn.disabled = S.running; manualBtn.disabled = S.running;
     killBtn.disabled = !(S.running && !S.killed && S.worker === 'A');
     idem.disabled = S.running;
     if (killBtn.disabled) { killBtn.dataset.hint = '0'; clearTimeout(hintTimer); }
@@ -133,6 +133,7 @@
         else { S.effects[step.svc]++; setCount(step.svc, S.effects[step.svc], 'bad'); log(`${step.label} applied AGAIN`, 'bad'); }
       } else { S.applied.add(step.k); S.effects[step.svc] = 1; setCount(step.svc, 1, 'good'); }
       setFill(f2, 1, scaled(step.gap));
+      if (S.auto && step.k === 'charge' && !S.killed) setTimeout(killNow, scaled(240));   // scripted crash, inside the danger window
       await sleep(step.gap);
     }
     log(`${step.timer ? 'TimerFired' : 'ActivityCompleted'}  #${n}`, 'ok');
@@ -153,14 +154,14 @@
   }
 
   /* ── scenarios ── */
-  async function start() {
+  async function start(auto) {
     reset();
-    S.running = true; S.safe = idem.checked;
+    S.running = true; S.safe = idem.checked; S.auto = !!auto;
     demo.dataset.run = 'running';
     syncButtons();
     hintTimer = setTimeout(() => { if (!killBtn.disabled) killBtn.dataset.hint = '1'; }, 1400);
 
-    say('Worker A is executing. Press <b>Kill worker A</b> whenever you like, ideally while a bar is amber.', 'idle');
+    say(auto ? 'Worker A is executing. It is about to be killed at the worst possible moment.' : 'Worker A is executing. Press <b>Kill worker A</b> whenever you like, ideally while a bar is amber.', 'idle');
     setWorker(A, 'running', 'running', 'claimed · lease epoch 1'); setLease(A, 1);
     log('WorkflowStarted  orderSaga');
     try {
@@ -168,7 +169,7 @@
       await runWorker('A');
       setWorker(A, 'idle', 'done', 'finished · lease released'); setLease(A, 0, 300);
       log('WorkflowCompleted', 'ok');
-      S.running = false; demo.dataset.run = 'good'; runBtn.textContent = 'Run again';
+      S.running = false; demo.dataset.run = 'good'; runBtn.textContent = 'Run & crash it again';
       say('<b>No crash this time.</b> It ran start to finish on Worker A. Run it again and kill A while a step\'s bar is amber.', 'idle');
       syncButtons();
     } catch (e) {
@@ -214,7 +215,7 @@
     setWorker(B, 'idle', 'done', 'finished · lease released'); setLease(B, 0, 300);
     log('WorkflowCompleted', 'ok');
 
-    S.running = false; runBtn.textContent = 'Run again'; syncButtons();
+    S.running = false; runBtn.textContent = 'Run & crash it again'; syncButtons();
     const skipped = [...S.recorded].length;
     if (limbo && S.safe) {
       demo.dataset.run = 'good';
@@ -235,7 +236,8 @@
     cancelAll(KILLED);
   }
 
-  runBtn.addEventListener('click', start);
+  runBtn.addEventListener('click', () => start(true));
+  manualBtn.addEventListener('click', () => start(false));
   killBtn.addEventListener('click', killNow);
   addEventListener('keydown', (e) => {
     if ((e.key === 'k' || e.key === 'K') && !e.metaKey && !e.ctrlKey && !e.altKey && !/input|textarea/i.test(e.target.tagName)) killNow();

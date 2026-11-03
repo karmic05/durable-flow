@@ -56,7 +56,8 @@
           <span class="switch-label">Idempotency keys</span>
         </label>
         <button class="btn btn-danger" id="kill" type="button" disabled>Kill worker A <kbd>K</kbd></button>
-        <button class="btn btn-primary" id="run" type="button">Start workflow</button>
+        <button class="btn" id="runManual" type="button">Start, I'll kill it</button>
+        <button class="btn btn-primary" id="run" type="button">Run &amp; crash it for me</button>
       </div>
     </div>
 
@@ -99,7 +100,7 @@
       </div>
     </div>
 
-    <div class="verdict" id="verdict" data-tone="idle" role="status"><span>Start the workflow, then <b>kill Worker A</b> while a step's bar is amber. That's the window between a side effect happening and the engine recording it.</span></div>
+    <div class="verdict" id="verdict" data-tone="idle" role="status"><span>Press <b>Run &amp; crash it for me</b> and Worker A dies right after the card is charged, before that fact is recorded. Or start it yourself and <b>kill Worker A</b> while a step's bar is amber.</span></div>
   </div>
 </section>
 
