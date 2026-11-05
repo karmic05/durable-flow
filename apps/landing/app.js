@@ -13,6 +13,17 @@
     reveals.forEach((el) => io.observe(el));
   } else reveals.forEach((el) => el.classList.add('in'));
 
+  /* ───────── copy buttons ───────── */
+  $$('.copy').forEach((btn) => btn.addEventListener('click', async () => {
+    const text = btn.dataset.copy || '';
+    try { await navigator.clipboard.writeText(text); }
+    catch {
+      const ta = document.createElement('textarea'); ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); } catch { /* ignore */ } ta.remove();
+    }
+    btn.dataset.state = 'done'; clearTimeout(btn._t); btn._t = setTimeout(() => { btn.dataset.state = ''; }, 1500);
+  }));
+
   /* ───────── crash & resume simulation ─────────
      You decide when Worker A dies. Each step has a "work" phase, then the side effect lands in the outside world,
      then a short gap before the engine records the result (amber on the bar). Kill A inside the gap and the

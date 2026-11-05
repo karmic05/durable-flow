@@ -7,6 +7,10 @@
 <meta name="description" content="A durable execution engine in TypeScript and Postgres. Kill a worker mid-workflow and watch another resume from the event history with no duplicate side effects.">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#f5efe3">
+<meta property="og:type" content="website">
+<meta property="og:title" content="durable-flow: kill the worker, keep the workflow">
+<meta property="og:description" content="A durable execution engine in TypeScript and Postgres. Event-sourced replay, timers, retries and sagas, with no duplicate side effects after a crash.">
+<meta name="twitter:card" content="summary">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232b3cff'/%3E%3Cpath d='M9 22V10m0 0 7 6-7 6m14-12v12' stroke='%23fff' stroke-width='2.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -24,7 +28,8 @@
     </a>
     <nav class="nav-links" aria-label="Sections">
       <a href="#how">How it works</a>
-      <a href="#does">Features</a>
+      <a href="#use-cases">Use cases</a>
+      <a href="#start">Get started</a>
       <a href="#fine-print">Fine print</a>
       <a class="btn btn-sm" href="https://github.com/karmic05/durable-flow" rel="noopener">GitHub ↗</a>
     </nav>
@@ -42,7 +47,7 @@
   </p>
   <div class="cta rise" style="--i:3">
     <a class="btn btn-primary" href="#demo">Break it yourself <span aria-hidden="true">↓</span></a>
-    <a class="btn" href="https://github.com/karmic05/durable-flow" rel="noopener">View the source ↗</a>
+    <a class="btn" href="#start">How to use it →</a>
   </div>
 
   <!-- ───────────── interactive demo ───────────── -->
@@ -102,6 +107,7 @@
 
     <div class="verdict" id="verdict" data-tone="idle" role="status"><span>Press <b>Run &amp; crash it for me</b> and Worker A dies right after the card is charged, before that fact is recorded. Or start it yourself and <b>kill Worker A</b> while a step's bar is amber.</span></div>
   </div>
+  <p class="demo-note rise" style="--i:5">This demo is a simulation that runs in your browser. The real engine does the same thing against Postgres: run it yourself with <a href="#start">one command</a>.</p>
 </section>
 
 <!-- The page is itself an event history: each section is an event on the rail. -->
@@ -158,8 +164,186 @@
     </div>
   </section>
 
+  <section class="ev" id="use-cases">
+    <div class="ev-rail"><div class="ev-rail-in"><i class="node"></i><span class="seq">04</span><span class="evt">Use cases</span></div></div>
+    <div class="ev-body">
+      <h2 class="reveal">If it can't half-finish<br><span class="soft">or run twice, it's a workflow.</span></h2>
+      <p class="intro reveal">Reach for it when work takes more than a few seconds, touches more than one system, or would hurt if it stopped midway or repeated itself.</p>
+
+      <ul class="cases">
+        <li class="case reveal" style="--i:0"><h3>Checkout and order fulfilment</h3><p>Reserve stock, charge the card, ship, send the receipt. If shipping fails, refund and release stock automatically, in reverse order.</p><div class="chips"><span>activity</span><span>saga</span><span>child workflow</span></div></li>
+        <li class="case reveal" style="--i:1"><h3>Subscriptions and failed-payment recovery</h3><p>Retry a declined card on day 1, 3 and 7, then cancel. The schedule lives in the workflow, not in a cron table you have to babysit.</p><div class="chips"><span>sleep</span><span>retries</span></div></li>
+        <li class="case reveal" style="--i:2"><h3>Onboarding with human approval</h3><p>Create the account, then wait days for a manager to approve. The workflow just sits there, costing nothing, until a signal arrives.</p><div class="chips"><span>signal</span><span>sleep</span></div></li>
+        <li class="case reveal" style="--i:3"><h3>Reminders and trial expiry</h3><p>"Email them in 3 days unless they upgrade." One line of code, and it survives deploys and restarts.</p><div class="chips"><span>sleep</span><span>signal</span></div></li>
+        <li class="case reveal" style="--i:4"><h3>AI and LLM pipelines</h3><p>A multi-step agent where every model call costs money. Finished steps are replayed from history instead of being paid for again after a crash.</p><div class="chips"><span>activity</span><span>retries</span></div></li>
+        <li class="case reveal" style="--i:5"><h3>Data pipelines and ETL</h3><p>Fetch, transform, load, with backoff on flaky sources. A job that dies at row 40,000 resumes there, and <code>continueAsNew</code> keeps long runs light.</p><div class="chips"><span>retries</span><span>continueAsNew</span></div></li>
+        <li class="case reveal" style="--i:6"><h3>Provisioning and rollbacks</h3><p>Create a database, a bucket, a DNS record. If step four fails, tear down one to three in reverse instead of leaving orphans.</p><div class="chips"><span>saga</span><span>activity</span></div></li>
+        <li class="case reveal" style="--i:7"><h3>Document and media processing</h3><p>Fan out one child workflow per file, wait for all of them, then assemble the result.</p><div class="chips"><span>child workflow</span><span>retries</span></div></li>
+      </ul>
+
+      <h3 class="sub-h reveal">Who it's for</h3>
+      <div class="who">
+        <div class="who-card reveal" style="--i:0"><h4>TypeScript backend teams</h4><p>You already run Postgres and have multi-step jobs that must not half-finish or repeat. You'd rather not stand up a new cluster just to get durability.</p></div>
+        <div class="who-card reveal" style="--i:1"><h4>Teams evaluating durable execution</h4><p>A small, readable engine to prototype against before committing to a bigger platform. The same ideas in about 1,200 lines.</p></div>
+        <div class="who-card reveal" style="--i:2"><h4>Anyone learning how it works</h4><p>Ten files. Read <code>replay.ts</code>, run the tests, kill a worker. The fastest way to really understand determinism, leases and idempotency.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="ev" id="start">
+    <div class="ev-rail"><div class="ev-rail-in"><i class="node"></i><span class="seq">05</span><span class="evt">Get started</span></div></div>
+    <div class="ev-body">
+      <h2 class="reveal">Run it in five minutes.<br><span class="soft">Nothing to sign up for.</span></h2>
+
+      <ol class="guide">
+        <li class="reveal">
+          <span class="gnum">1</span>
+          <div class="gbody">
+            <h3>What you need</h3>
+            <p>Node.js 20 or newer (built and tested on Node 24) and git. You do <b>not</b> need Docker or a Postgres install for the quickstart: it pulls a real Postgres binary through the <code>embedded-postgres</code> package and throws it away afterwards.</p>
+          </div>
+        </li>
+
+        <li class="reveal">
+          <span class="gnum">2</span>
+          <div class="gbody">
+            <h3>Get the code</h3>
+            <div class="term">
+              <div class="term-bar"><span>terminal</span><button class="copy" type="button" data-copy="git clone https://github.com/karmic05/durable-flow.git&#10;cd durable-flow&#10;npm install"><span class="c-idle">Copy</span><span class="c-done" aria-hidden="true">Copied</span></button></div>
+<pre><code><span class="p">$</span> git clone https://github.com/karmic05/durable-flow.git
+<span class="p">$</span> cd durable-flow
+<span class="p">$</span> npm install</code></pre>
+            </div>
+          </div>
+        </li>
+
+        <li class="reveal">
+          <span class="gnum">3</span>
+          <div class="gbody">
+            <h3>Watch it survive a crash</h3>
+            <p>This starts a throwaway Postgres, runs a 3-step checkout workflow, kills Worker A right after it charges the card, and lets Worker B finish the job.</p>
+            <div class="term">
+              <div class="term-bar"><span>terminal</span><button class="copy" type="button" data-copy="npm run quickstart"><span class="c-idle">Copy</span><span class="c-done" aria-hidden="true">Copied</span></button></div>
+<pre><code><span class="p">$</span> npm run quickstart</code></pre>
+            </div>
+            <p class="small">You'll see this (real output):</p>
+            <div class="term term-out">
+              <div class="term-bar"><span>output</span></div>
+<pre><code><span class="dim">▶ Worker A starts</span>
+   📦 reserved stock for 1001
+   💳 charged $49 (key order-1001:2)
+   <span class="bad">💥 Worker A killed: the card WAS charged, but the result was never recorded</span>
+
+<span class="dim">▶ Worker B starts (A is dead, its lease expires, B takes over)</span>
+   ↩︎  charge ignored, key order-1001:2 already seen
+   ✉️  receipt sent for 1001
+
+<span class="ok">✔ completed: "order 1001 complete"</span>
+
+Event history (what Postgres stored):
+   1  WorkflowStarted
+   2  ActivityScheduled  reserveStock
+   3  ActivityStarted    #1
+   4  ActivityCompleted  #1
+   5  ActivityScheduled  chargeCard
+   6  ActivityStarted    #2
+   7  <span class="hl">WorkerTakeover     A → B</span>
+   8  ActivityStarted    #2
+   9  ActivityCompleted  #2
+  10  TimerStarted       #3
+  11  TimerFired         #3
+  12  ActivityScheduled  sendReceipt
+  13  ActivityStarted    #4
+  14  ActivityCompleted  #4
+  15  WorkflowCompleted
+
+<span class="ok">Card charged 1× for 1 order.  No duplicate side effects.</span></code></pre>
+            </div>
+            <p class="small">Read it top to bottom: the charge happened once (row 5–6), Worker A died, B took over (row 7), re-ran the step, the service recognised the idempotency key and ignored the repeat, and the workflow finished.</p>
+          </div>
+        </li>
+
+        <li class="reveal">
+          <span class="gnum">4</span>
+          <div class="gbody">
+            <h3>Run the test suite</h3>
+            <div class="term">
+              <div class="term-bar"><span>terminal</span><button class="copy" type="button" data-copy="npm test"><span class="c-idle">Copy</span><span class="c-done" aria-hidden="true">Copied</span></button></div>
+<pre><code><span class="p">$</span> npm test</code></pre>
+            </div>
+            <p>24 tests: replay determinism, non-determinism detection, the same crash-in-the-worst-spot scenario, a zombie worker being fenced out, retries and backoff, durable timers, sagas, signals, child workflows, <code>continueAsNew</code> and <code>ctx.patched()</code> versioning.</p>
+          </div>
+        </li>
+
+        <li class="reveal">
+          <span class="gnum">5</span>
+          <div class="gbody">
+            <h3>Write your own workflow</h3>
+            <p>Define workflows and activities, start one from your app, and run workers as separate processes (as many as you like).</p>
+            <div class="code code-flat">
+<pre><code><span class="k">import</span> { Registry, Store, Worker } <span class="k">from</span> <span class="s">'@durable-flow/engine'</span>
+
+<span class="k">const</span> store = <span class="k">new</span> <span class="f">Store</span>(process.env.DATABASE_URL!)   <span class="cm">// any Postgres</span>
+<span class="k">await</span> store.<span class="c">migrate</span>()                                <span class="cm">// creates its tables, safe to re-run</span>
+
+<span class="k">const</span> registry = <span class="k">new</span> <span class="f">Registry</span>()
+  .<span class="c">workflow</span>(<span class="s">'welcome'</span>, <span class="k">async</span> (ctx, user) => {
+    <span class="k">await</span> ctx.<span class="c">activity</span>(<span class="s">'createAccount'</span>, user)      <span class="cm">// recorded; retried on failure</span>
+    <span class="k">await</span> ctx.<span class="c">sleep</span>(<span class="n">24</span> * <span class="n">60</span> * <span class="n">60</span> * <span class="n">1000</span>)           <span class="cm">// sleeps a day, holds no worker</span>
+    <span class="k">await</span> ctx.<span class="c">activity</span>(<span class="s">'sendTips'</span>, user)
+    <span class="k">return</span> <span class="s">'done'</span>
+  })
+  .<span class="c">activity</span>(<span class="s">'createAccount'</span>, <span class="k">async</span> (user, ac) => {
+    <span class="cm">// call your API here. Pass ac.idempotencyKey along so a retry can't double-apply.</span>
+  })
+  .<span class="c">activity</span>(<span class="s">'sendTips'</span>, <span class="k">async</span> (user, ac) => { <span class="cm">/* ... */</span> })
+
+<span class="cm">// start one, e.g. from your signup handler</span>
+<span class="k">await</span> store.<span class="c">createWorkflow</span>({ id: <span class="s">`welcome-${user.id}`</span>, type: <span class="s">'welcome'</span>, input: user })
+
+<span class="cm">// run a worker, in its own process</span>
+<span class="k">await new</span> <span class="f">Worker</span>({ id: <span class="s">'worker-1'</span>, store, registry }).<span class="c">start</span>()</code></pre>
+            </div>
+            <div class="note">
+              <b>Honest note on packaging.</b> It isn't on npm yet. Today, add your workflows next to <code>examples/</code> in the cloned repo, or copy <code>packages/engine/src</code> (10 files, about 1,200 lines) into your project. An npm package is the obvious next step.
+            </div>
+          </div>
+        </li>
+
+        <li class="reveal">
+          <span class="gnum">6</span>
+          <div class="gbody">
+            <h3>Use your own Postgres</h3>
+            <p>Point the store at any Postgres 14+ database (Neon, Supabase, RDS, local). Workers can run on any machine that can reach it; the database is the only shared state.</p>
+            <div class="term">
+              <div class="term-bar"><span>terminal</span><button class="copy" type="button" data-copy="export DATABASE_URL=postgres://user:pass@host:5432/dbname"><span class="c-idle">Copy</span><span class="c-done" aria-hidden="true">Copied</span></button></div>
+<pre><code><span class="p">$</span> export DATABASE_URL=postgres://user:pass@host:5432/dbname</code></pre>
+            </div>
+          </div>
+        </li>
+      </ol>
+
+      <h3 class="sub-h reveal">The API at a glance</h3>
+      <div class="apitable reveal" role="table" aria-label="API reference">
+        <div class="arow" role="row"><code role="cell">ctx.activity(name, input, opts?)</code><span role="cell">Run a side effect. Recorded, retried with backoff, given an idempotency key.</span></div>
+        <div class="arow" role="row"><code role="cell">ctx.sleep(ms)</code><span role="cell">A durable timer. Survives restarts and holds no worker while it waits.</span></div>
+        <div class="arow" role="row"><code role="cell">ctx.waitForSignal(name)</code><span role="cell">Pause until <code>store.signal(id, name, payload)</code> arrives, e.g. a human approval.</span></div>
+        <div class="arow" role="row"><code role="cell">ctx.child(type, input)</code><span role="cell">Run another workflow and await its result.</span></div>
+        <div class="arow" role="row"><code role="cell">ctx.saga()</code><span role="cell"><code>.add(undoActivity, input)</code> as you go, <code>.compensate()</code> on failure. Runs undos in reverse.</span></div>
+        <div class="arow" role="row"><code role="cell">ctx.now() · random() · uuid()</code><span role="cell">Deterministic replacements. Recorded once, identical on every replay.</span></div>
+        <div class="arow" role="row"><code role="cell">ctx.patched(id)</code><span role="cell">Change workflow code safely while old runs are still in flight.</span></div>
+        <div class="arow" role="row"><code role="cell">ctx.continueAsNew(input)</code><span role="cell">Hand state to a fresh run so long loops keep a short history.</span></div>
+        <div class="arow" role="row"><code role="cell">ctx.setQueryHandler(name, fn)</code><span role="cell">Expose live workflow state for inspection.</span></div>
+      </div>
+
+      <div class="note reveal">
+        <b>What's still in progress.</b> The React dashboard (history timeline, state inspector, chaos mode) and a one-command hosted server are not finished. The interactive demo at the top of this page is a simulation that runs in your browser; the engine, the tests and the quickstart above are the real thing.
+      </div>
+    </div>
+  </section>
+
   <section class="ev" id="fine-print">
-    <div class="ev-rail"><div class="ev-rail-in"><i class="node"></i><span class="seq">04</span><span class="evt">Fine print</span></div></div>
+    <div class="ev-rail"><div class="ev-rail-in"><i class="node"></i><span class="seq">06</span><span class="evt">Fine print</span></div></div>
     <div class="ev-body">
       <h2 class="reveal">Not magic.<br><span class="soft">Here's what it isn't.</span></h2>
       <div class="limits">
@@ -188,7 +372,7 @@
 <footer class="footer">
   <div class="wrap footer-inner">
     <span><b>durable-flow</b> · TypeScript, Postgres, React</span>
-    <span>Live demo: deploying soon · <a href="https://github.com/karmic05/durable-flow" rel="noopener">Source ↗</a></span>
+    <span><a href="#start">Get started</a> · <a href="https://github.com/karmic05/durable-flow" rel="noopener">Source on GitHub ↗</a></span>
   </div>
 </footer>
 

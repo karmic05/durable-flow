@@ -2,13 +2,18 @@
   "name": "durable-flow",
   "private": true,
   "type": "module",
-  "workspaces": ["packages/*", "apps/*", "examples"],
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "examples"
+  ],
   "scripts": {
     "dev": "tsx scripts/dev.ts",
     "test": "vitest run",
     "chaos": "tsx scripts/chaos.ts",
     "bench": "tsx scripts/bench.ts",
-    "build:web": "npm -w apps/web run build"
+    "build:web": "npm -w apps/web run build",
+    "quickstart": "tsx examples/src/quickstart.ts"
   },
   "devDependencies": {
     "tsx": "^4.19.0",
