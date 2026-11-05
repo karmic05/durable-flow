@@ -1,4 +1,4 @@
-import type { ActivityContext, Store } from '@durable-flow/engine';
+import type { ActivityContext, StoreBase } from '@durable-flow/engine';
 
 /**
  * The simulated "outside world" (payments, inventory, carrier, email).
@@ -13,7 +13,7 @@ import type { ActivityContext, Store } from '@durable-flow/engine';
 export interface Settings { idempotency: boolean; failure_rate: number; speed: number; armed_crash: string | null }
 
 let cache: { at: number; value: Settings } | undefined;
-export async function getSettings(store: Store): Promise<Settings> {
+export async function getSettings(store: StoreBase): Promise<Settings> {
   if (cache && Date.now() - cache.at < 250) return cache.value;
   const s = await store.allSettings();
   const value: Settings = {

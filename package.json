@@ -13,17 +13,20 @@
     "chaos": "tsx scripts/chaos.ts",
     "bench": "tsx scripts/bench.ts",
     "build:web": "npm -w apps/web run build",
-    "quickstart": "tsx examples/src/quickstart.ts"
+    "quickstart": "tsx examples/src/quickstart.ts",
+    "build:landing": "esbuild apps/landing/src/playground.ts --bundle --format=esm --target=es2022 --minify --outfile=apps/landing/playground.js"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.15",
+    "@types/node": "^22.0.0",
+    "@types/pg": "^8.11.0",
+    "esbuild": "^0.28.2",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",
-    "vitest": "^2.1.0",
-    "@types/node": "^22.0.0",
-    "@types/pg": "^8.11.0"
+    "vitest": "^2.1.0"
   },
   "dependencies": {
-    "pg": "^8.13.0",
-    "embedded-postgres": "^17.2.0-beta.15"
+    "embedded-postgres": "^17.2.0-beta.15",
+    "pg": "^8.13.0"
   }
 }

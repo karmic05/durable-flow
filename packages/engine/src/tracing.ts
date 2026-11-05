@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import pg from 'pg';
+import type { PoolLike } from './store-base.js';
 import { context, ROOT_CONTEXT, Span, SpanStatusCode, trace, TraceFlags, Context, Attributes } from '@opentelemetry/api';
 import { BasicTracerProvider, ReadableSpan, SimpleSpanProcessor, SpanExporter } from '@opentelemetry/sdk-trace-base';
 import { ExportResultCode } from '@opentelemetry/core';
@@ -8,7 +8,7 @@ const hrToMs = (t: [number, number]) => t[0] * 1000 + t[1] / 1e6;
 
 /** Writes finished OpenTelemetry spans to Postgres so the UI can draw a per-workflow trace. */
 class PgSpanExporter implements SpanExporter {
-  constructor(private pool: pg.Pool) {}
+  constructor(private pool: PoolLike) {}
   export(spans: ReadableSpan[], done: (r: { code: ExportResultCode; error?: Error }) => void) {
     (async () => {
       for (const s of spans) {
@@ -42,7 +42,7 @@ export interface ActiveSpan {
 export class Tracing {
   private provider: BasicTracerProvider;
   private tracer;
-  constructor(pool: pg.Pool) {
+  constructor(pool: PoolLike) {
     this.provider = new BasicTracerProvider({ spanProcessors: [new SimpleSpanProcessor(new PgSpanExporter(pool))] });
     this.tracer = this.provider.getTracer('durable-flow');
   }

@@ -1,7 +1,7 @@
 import { Registry, ActivityContext, WorkflowDefinition } from './registry.js';
 import { replay, PendingCommand } from './replay.js';
-import { Store } from './store.js';
-import { Tracing, ActiveSpan } from './tracing.js';
+import type { StoreBase } from './store-base.js';
+import type { Tracing, ActiveSpan } from './tracing.js';
 import { EventDraft, HistoryEvent, LeaseLostError, NonRetryableError, SerializedError, WorkflowRow } from './types.js';
 
 export interface WorkerHooks {
@@ -13,7 +13,7 @@ export interface WorkerHooks {
 
 export interface WorkerOptions {
   id: string;
-  store: Store;
+  store: StoreBase;
   registry: Registry;
   deps?: any;
   leaseMs?: number;
@@ -25,6 +25,7 @@ export interface WorkerOptions {
   log?: (msg: string) => void;
 }
 
+const PID = typeof process !== 'undefined' ? process.pid : 0;   // no `process` in browsers
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const serializeError = (e: any): SerializedError => ({ name: e?.name ?? 'Error', message: String(e?.message ?? e), stack: e?.stack });
 
@@ -45,8 +46,8 @@ export class Worker {
 
   async start() {
     this.running = true;
-    await this.o.store.upsertWorker(this.id, process.pid, []);
-    this.beat = setInterval(() => { this.o.store.upsertWorker(this.id, process.pid, this.activeIds).catch(() => {}); }, 500);
+    await this.o.store.upsertWorker(this.id, PID, []);
+    this.beat = setInterval(() => { this.o.store.upsertWorker(this.id, PID, this.activeIds).catch(() => {}); }, 500);
     void this.loop();
   }
   /** Simulate a hard kill in-process: stop heartbeating and writing, release nothing. (Real SIGKILL is tested via child processes.) */

@@ -27,6 +27,7 @@
       durable-flow
     </a>
     <nav class="nav-links" aria-label="Sections">
+      <a href="#playground">Playground</a>
       <a href="#how">How it works</a>
       <a href="#use-cases">Use cases</a>
       <a href="#start">Get started</a>
@@ -47,7 +48,7 @@
   </p>
   <div class="cta rise" style="--i:3">
     <a class="btn btn-primary" href="#demo">Break it yourself <span aria-hidden="true">↓</span></a>
-    <a class="btn" href="#start">How to use it →</a>
+    <a class="btn" href="#playground">Try the real engine →</a>
   </div>
 
   <!-- ───────────── interactive demo ───────────── -->
@@ -107,7 +108,76 @@
 
     <div class="verdict" id="verdict" data-tone="idle" role="status"><span>Press <b>Run &amp; crash it for me</b> and Worker A dies right after the card is charged, before that fact is recorded. Or start it yourself and <b>kill Worker A</b> while a step's bar is amber.</span></div>
   </div>
-  <p class="demo-note rise" style="--i:5">This demo is a simulation that runs in your browser. The real engine does the same thing against Postgres: run it yourself with <a href="#start">one command</a>.</p>
+  <p class="demo-note rise" style="--i:5">This demo is a simulation. For the real engine on a real Postgres, open the <a href="#playground">playground</a> below, or run it yourself with <a href="#start">one command</a>.</p>
+</section>
+
+<section class="pg-section wrap" id="playground">
+  <div class="pg-intro">
+    <p class="eyebrow">Playground · real Postgres, in your browser</p>
+    <h2>Don't take our word for it.<br><span class="soft">Run the actual engine.</span></h2>
+    <p class="pg-lede">The demo above is a simulation. This isn't. It's the real durable-flow engine running on a real Postgres database (compiled to WebAssembly) inside this page. Edit the workflow, kill workers, and query the very tables the engine writes to. Nothing leaves your browser.</p>
+  </div>
+
+  <div class="pg" id="pg" data-boot="idle">
+    <div class="pg-top">
+      <div class="pg-title"><span class="dot" aria-hidden="true"></span><b>durable-flow</b><span class="muted">on</span><span class="pg-pill" id="pgPill">not started</span></div>
+      <button class="btn btn-sm" id="pgReset" type="button">Reset database</button>
+    </div>
+
+    <div class="pg-boot">
+      <div class="pg-boot-in">
+        <h3>Boot a Postgres in this tab</h3>
+        <p>Downloads Postgres compiled to WebAssembly (about 15 MB unpacked, cached after the first visit), creates the engine's tables, and starts two workers. No server, no sign-up.</p>
+        <button class="btn btn-primary" id="pgBoot" type="button">Boot Postgres</button>
+        <p class="pg-bootmsg" id="pgBootMsg" role="status"></p>
+      </div>
+    </div>
+
+    <div class="pg-main">
+      <div class="pg-left">
+        <div class="pg-block">
+          <div class="pg-label"><label for="pgPreset">Workflow</label><select id="pgPreset"></select></div>
+          <textarea id="pgCode" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Workflow code"></textarea>
+          <p class="pg-hint" id="pgHint"></p>
+          <p class="pg-error" id="pgError" hidden></p>
+          <label class="pg-field">Crash a worker <select id="pgCrashAt" aria-label="When to crash a worker"></select></label>
+          <div class="pg-actions">
+            <button class="btn btn-primary" id="pgStart" type="button">Start workflow</button>
+            <button class="btn" id="pgKillHolder" type="button">Kill the worker running it</button>
+          </div>
+          <p class="pg-armnote" id="pgArmNote"></p>
+        </div>
+
+        <div class="pg-block">
+          <div class="pg-label"><b>Workers</b><button class="btn btn-sm" id="pgAddWorker" type="button">+ worker</button></div>
+          <div id="pgWorkers" class="pg-workers"></div>
+          <div class="pg-opts">
+            <label class="switch"><input type="checkbox" id="pgIdem" checked><span class="switch-track" aria-hidden="true"><span class="switch-thumb"></span></span><span class="switch-label">Idempotency keys</span></label>
+            <label class="pg-field">Speed <select id="pgSpeed"><option value="0.5">slow</option><option value="1" selected>normal</option><option value="2">fast</option></select></label>
+          </div>
+          <div class="pg-signal"><span>Signal</span><input id="pgSignalName" value="approve" aria-label="Signal name"><input id="pgSignalPayload" value='{"by":"sam"}' aria-label="Signal payload"><button class="btn btn-sm" id="pgSendSignal" type="button">Send</button></div>
+        </div>
+      </div>
+
+      <div class="pg-right">
+        <div class="pg-status" id="pgStatus">Nothing running yet.</div>
+        <div class="pg-chips" id="pgChips"></div>
+        <div class="pg-tabs" role="tablist">
+          <button type="button" role="tab" data-tab="history" aria-selected="true">Event history</button>
+          <button type="button" role="tab" data-tab="sql" aria-selected="false">SQL console</button>
+          <button type="button" role="tab" data-tab="effects" aria-selected="false">Outside world</button>
+        </div>
+        <div class="pg-panel pg-history" data-panel="history" id="pgHistory"><table><tbody id="pgHistoryBody"></tbody></table></div>
+        <div class="pg-panel" data-panel="sql" hidden>
+          <div class="pg-chips" id="pgSqlPresets"></div>
+          <textarea id="pgSql" class="pg-sql" spellcheck="false" aria-label="SQL query"></textarea>
+          <div class="pg-sqlbar"><button class="btn btn-sm btn-primary" id="pgRunSql" type="button">Run <kbd>Ctrl ↵</kbd></button><span>Your own private Postgres. Break it freely, then hit Reset.</span></div>
+          <div id="pgSqlOut"></div>
+        </div>
+        <div class="pg-panel" data-panel="effects" hidden><div id="pgEffectsBody"></div></div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- The page is itself an event history: each section is an event on the rail. -->
@@ -337,7 +407,7 @@ Event history (what Postgres stored):
       </div>
 
       <div class="note reveal">
-        <b>What's still in progress.</b> The React dashboard (history timeline, state inspector, chaos mode) and a one-command hosted server are not finished. The interactive demo at the top of this page is a simulation that runs in your browser; the engine, the tests and the quickstart above are the real thing.
+        <b>What's still in progress.</b> The React dashboard (history timeline, state inspector, chaos mode) and a one-command hosted server are not finished. The interactive demo at the top of this page is a simulation; the playground, the engine, the tests and the quickstart are the real thing.
       </div>
     </div>
   </section>
@@ -377,5 +447,6 @@ Event history (what Postgres stored):
 </footer>
 
 <script src="app.js"></script>
+<script type="module" src="playground.js"></script>
 </body>
 </html>

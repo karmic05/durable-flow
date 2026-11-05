@@ -1,5 +1,3 @@
-import { randomUUID } from 'node:crypto';
-import { fileURLToPath } from 'node:url';
 import {
   ActivityFailure, ActivityOptions, ChildWorkflowFailure, ContinueAsNewSignal, DEFAULT_RETRY, EventDraft,
   HistoryEvent, NonDeterminismError, RetryPolicy, SerializedError,
@@ -8,6 +6,20 @@ import {
 // Captured at import so engine internals never go through (possibly trapped) globals.
 const realNow = Date.now.bind(Date);
 const realRandom = Math.random.bind(Math);
+const randomUUID = () => globalThis.crypto.randomUUID();          // Node 20+ and every modern browser
+const fileUrlToPath = (u: string) => {
+  const p = decodeURIComponent(new URL(u).pathname);
+  return /^\/[A-Za-z]:/.test(p) ? p.slice(1) : p;                  // file:///C:/x -> C:/x
+};
+
+/**
+ * Yield to the event loop for one full macrotask, so every already-resolved promise has drained.
+ * `setImmediate` is Node-only, so browsers fall back to a MessageChannel (also a real macrotask).
+ */
+const macrotask = (): Promise<void> =>
+  typeof setImmediate === 'function'
+    ? new Promise<void>((r) => setImmediate(r))
+    : new Promise<void>((r) => { const c = new MessageChannel(); c.port1.onmessage = () => { c.port1.close(); r(); }; c.port2.postMessage(0); });
 
 export type Kind = 'activity' | 'timer' | 'signal' | 'child' | 'value' | 'marker';
 
@@ -135,7 +147,7 @@ function siteOf(): { file: string; line: number } | undefined {
     const m = l.match(/\(?((?:file:\/\/)?[^()\s]+?):(\d+):(\d+)\)?\s*$/);
     if (!m) continue;
     let file = m[1];
-    if (file.startsWith('file://')) { try { file = fileURLToPath(file); } catch { /* keep */ } }
+    if (file.startsWith('file://')) { try { file = fileUrlToPath(file); } catch { /* keep */ } }
     return { file, line: Number(m[2]) };
   }
   return undefined;
@@ -341,7 +353,7 @@ export async function replay(fn: WorkflowFn, events: HistoryEvent[], opts: Repla
     (v) => { settled = true; output = v; },
     (e) => { settled = true; error = e; });
   // All replayed results resolve as microtasks, so once the macrotask queue turns the function is either done or parked.
-  await new Promise<void>((r) => setImmediate(r));
+  await macrotask();
 
   const base = {
     newEvents, commands, pending, queryHandlers, nextCmd: counter + 1, eventsReplayed: events.length,

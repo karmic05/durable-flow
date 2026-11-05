@@ -1,4 +1,5 @@
 export * from './types.js';
+export * from './store-base.js';
 export * from './store.js';
 export * from './replay.js';
 export * from './registry.js';
