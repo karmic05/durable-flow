@@ -115,7 +115,7 @@
   <div class="pg-intro">
     <p class="eyebrow">Playground · real Postgres, in your browser</p>
     <h2>Don't take our word for it.<br><span class="soft">Run the actual engine.</span></h2>
-    <p class="pg-lede">The demo above is a simulation. This isn't. It's the real durable-flow engine running on a real Postgres database (compiled to WebAssembly) inside this page. Edit the workflow, kill workers, and query the very tables the engine writes to. Nothing leaves your browser.</p>
+    <p class="pg-lede">The demo above is a simulation. This isn't. It's the real durable-flow engine running on a real Postgres database (compiled to WebAssembly) inside this page. Edit the workflow, kill workers, and query the very tables the engine writes to. Nothing leaves your browser. Killing a worker here is simulated: it stops heartbeating and writing, which the engine can't tell apart from a dead process.</p>
   </div>
 
   <div class="pg" id="pg" data-boot="idle">
@@ -222,13 +222,13 @@
       <h2 class="reveal">Everything a workflow needs<br><span class="soft">to outlive its process.</span></h2>
       <ul class="tiles">
         <li class="tile reveal" style="--i:0"><span class="tag">replay</span><h3>Deterministic replay</h3><p>Divergence is detected and parked as a stuck workflow, never silently corrupted.</p></li>
-        <li class="tile reveal" style="--i:1"><span class="tag">crash</span><h3>Crash recovery</h3><p>Leases, heartbeats, epoch fencing. Workers are real OS processes; the kill is a genuine <code>SIGKILL</code>.</p></li>
+        <li class="tile reveal" style="--i:1"><span class="tag">crash</span><h3>Crash recovery</h3><p>Leases, heartbeats and epoch fencing: a dead worker's lease expires, another takes over, and the dead one's late writes are rejected. Tested by simulating a crash at the worst moment.</p></li>
         <li class="tile reveal" style="--i:2"><span class="tag">time</span><h3>Durable timers</h3><p><code>ctx.sleep</code> holds no worker while it waits. Any worker wakes it when it's due.</p></li>
         <li class="tile reveal" style="--i:3"><span class="tag">retry</span><h3>Retries</h3><p>Attempts, backoff, jitter and non-retryable errors per activity. Every attempt is an event.</p></li>
         <li class="tile reveal" style="--i:4"><span class="tag">saga</span><h3>Compensation</h3><p>Undo steps run in reverse as recorded, retried, idempotent activities.</p></li>
         <li class="tile reveal" style="--i:5"><span class="tag">flow</span><h3>Signals and children</h3><p>Park on a human approval, fan out child workflows, query live state.</p></li>
         <li class="tile reveal" style="--i:6"><span class="tag">ship</span><h3>Safe code changes</h3><p><code>ctx.patched()</code> versions in-flight runs. A fuzzer finds hidden clock and RNG use.</p></li>
-        <li class="tile reveal" style="--i:7"><span class="tag">see</span><h3>Observable</h3><p>History timeline, state inspector with a replay debugger, OpenTelemetry traces across workers.</p></li>
+        <li class="tile reveal" style="--i:7"><span class="tag">see</span><h3>Observable</h3><p>Every step is a row in Postgres you can query with plain SQL, and the playground shows the live event history. A visual timeline and inspector are in progress.</p></li>
         <li class="tile reveal" style="--i:8"><span class="tag">scale</span><h3>Bounded history</h3><p><code>continueAsNew</code> hands state to a fresh run so long loops never replay forever.</p></li>
       </ul>
     </div>
@@ -291,7 +291,7 @@
           <span class="gnum">3</span>
           <div class="gbody">
             <h3>Watch it survive a crash</h3>
-            <p>This starts a throwaway Postgres, runs a 3-step checkout workflow, kills Worker A right after it charges the card, and lets Worker B finish the job.</p>
+            <p>This starts a throwaway Postgres, runs a 3-step checkout workflow, simulates a hard crash of Worker A right after it charges the card, and lets Worker B finish the job.</p>
             <div class="term">
               <div class="term-bar"><span>terminal</span><button class="copy" type="button" data-copy="npm run quickstart"><span class="c-idle">Copy</span><span class="c-done" aria-hidden="true">Copied</span></button></div>
 <pre><code><span class="p">$</span> npm run quickstart</code></pre>
@@ -341,7 +341,7 @@ Event history (what Postgres stored):
               <div class="term-bar"><span>terminal</span><button class="copy" type="button" data-copy="npm test"><span class="c-idle">Copy</span><span class="c-done" aria-hidden="true">Copied</span></button></div>
 <pre><code><span class="p">$</span> npm test</code></pre>
             </div>
-            <p>24 tests: replay determinism, non-determinism detection, the same crash-in-the-worst-spot scenario, a zombie worker being fenced out, retries and backoff, durable timers, sagas, signals, child workflows, <code>continueAsNew</code> and <code>ctx.patched()</code> versioning.</p>
+            <p>29 tests: replay determinism, non-determinism detection, the same crash-in-the-worst-spot scenario, a zombie worker being fenced out, retries and backoff, durable timers, sagas, signals, child workflows, <code>continueAsNew</code> and <code>ctx.patched()</code> versioning.</p>
           </div>
         </li>
 
@@ -384,7 +384,7 @@ Event history (what Postgres stored):
           <span class="gnum">6</span>
           <div class="gbody">
             <h3>Use your own Postgres</h3>
-            <p>Point the store at any Postgres 14+ database (Neon, Supabase, RDS, local). Workers can run on any machine that can reach it; the database is the only shared state.</p>
+            <p>Point the store at any Postgres database (tested on 17 and 18; Neon, Supabase, RDS and local should all work). Workers can run on any machine that can reach it; the database is the only shared state.</p>
             <div class="term">
               <div class="term-bar"><span>terminal</span><button class="copy" type="button" data-copy="export DATABASE_URL=postgres://user:pass@host:5432/dbname"><span class="c-idle">Copy</span><span class="c-done" aria-hidden="true">Copied</span></button></div>
 <pre><code><span class="p">$</span> export DATABASE_URL=postgres://user:pass@host:5432/dbname</code></pre>

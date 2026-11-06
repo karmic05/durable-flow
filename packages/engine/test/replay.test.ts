@@ -120,3 +120,20 @@ describe('determinism fuzzer', () => {
     expect(rep.violations.some((v) => v.api === 'Date.now()')).toBe(true);
   });
 });
+
+describe('queries', () => {
+  it('exposes live workflow state through query handlers, at any point in history', async () => {
+    const fn: WorkflowFn = async (ctx) => {
+      const state = { step: 'start' };
+      ctx.setQueryHandler('status', () => state);
+      state.step = 'charging';
+      await ctx.activity('charge');
+      state.step = 'done';
+    };
+    const parked = await replay(fn, [started()], { workflowId: 'w' });
+    expect(parked.queryHandlers.get('status')!()).toEqual({ step: 'charging' });
+    const h = [started(), ev('ActivityScheduled', { cmd: 1, name: 'charge', input: null, retry: {} }), ev('ActivityCompleted', { cmd: 1, attempt: 1, result: 1 })];
+    const finished = await replay(fn, h, { workflowId: 'w' });
+    expect(finished.queryHandlers.get('status')!()).toEqual({ step: 'done' });
+  });
+});

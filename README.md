@@ -24,21 +24,21 @@ Needs Node.js 20+ (developed on 24) and git. No Docker and no Postgres install: 
 git clone https://github.com/karmic05/durable-flow.git
 cd durable-flow
 npm install
-npm run quickstart   # kills a worker right after it charges a card; another finishes the job; charged once
-npm test             # 28 tests
+npm run quickstart   # simulates a crash right after a worker charges a card; another finishes the job; charged once
+npm test             # 29 tests
 ```
 
 ## What it does
 
 Deterministic replay with non-determinism detection · fenced leases and crash recovery · durable timers · retries with
 backoff · sagas (compensation) · signals · child workflows · `continueAsNew` · `ctx.patched()` versioning ·
-determinism fuzzer · OpenTelemetry spans · runs on `pg` (Node) or PGlite (browser).
+determinism fuzzer · queries · runs on `pg` (Node) or PGlite (browser). OpenTelemetry span export is written but not yet tested.
 
 ## What it is not
 
 - **Not exactly-once execution.** Activities run *at least once*. If a worker dies after a side effect but before the
   result is recorded, the activity runs again. You get exactly-once *effects* only if the service you call honours the
-  idempotency key (`ac.idempotencyKey`, stable across retries and takeovers). `npm run quickstart` shows both sides.
+  idempotency key (`ac.idempotencyKey`, stable across retries and takeovers). `npm run quickstart` shows the safe side; the playground on the website lets you switch idempotency off and watch the same crash charge twice.
 - **Not a Temporal replacement.** One Postgres, polling workers, TypeScript only. No sharding, multi-region,
   multi-tenancy, auth, or production hardening. It is a working implementation of the idea, built to learn from.
 - **Your workflow code must be deterministic.** No `Date.now()`, `Math.random()` or network calls; use `ctx.now()`,
